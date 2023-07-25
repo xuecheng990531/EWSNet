@@ -11,3 +11,6 @@ Please ensure that the placement of your dataset corresponds to the diagram prov
 <li> <code>pip install -r requirements.txt </code></li>
 
 <li> run <code>main.py</code></li>
+
+## Note
+Remeber delete the .gitkeep and .DS_Store files before running this program.
