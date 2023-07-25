@@ -1,7 +1,4 @@
-"""
-实现离散小波变换操作，可用于一维、二维数据。
-REF: Wavelet Integrated CNNs for Noise-Robust Image Classification
-"""
+
 import numpy as np
 import math
 from torch.nn import Module

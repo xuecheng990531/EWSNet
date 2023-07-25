@@ -1,5 +1,11 @@
 # EWSNet
-Code of "Wavelet Transform and Edge Loss-based Three-Stage Segmentation Model for Fundus Vessels"
+Code of "Wavelet Transform and Edge Loss-based Three-Stage Segmentation Model for Retinal Vessel"
 
-Note:
-Some of the code for the thesis is currently available for publication, but all code will need to be shared once the thesis is accepted.
+## Dataset
+Please ensure that the placement of your dataset corresponds to the diagram provided below.
+
+![](visual_output\data.png)
+
+## Train and Test
+
+run main.py

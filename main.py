@@ -210,8 +210,7 @@ if __name__ == '__main__':
         os.makedirs(args.ckpt_log_dir + '/' + args.test_data_name + '/')
         os.makedirs('visual_output/' + args.test_data_name + '/')
 
-    # 定义的三个模型
-    thinmodel = ResUnet(channel=2, device=device)  #输入图片+粗血管的分割mask
+    thinmodel = ResUnet(channel=2, device=device)  
     thickmodel = ThickNet(in_channels=1)
     refine = denosing_module(device=device, inchannel=1)
 
@@ -236,7 +235,7 @@ if __name__ == '__main__':
                                   lr=1e-4,
                                   betas=(0.9, 0.999))
 
-    # focal loss 应对微细血管分布不均匀的现象
+    
     critetions1 = Focal_IoU(theta=0.5)
     critetions2 = nn.BCELoss()
     critetions3 = EdgeLoss_BCE(device=device, alpha=0.5)

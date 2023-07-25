@@ -2,15 +2,8 @@ from torch import nn
 from .dwt_module import *
 from .dwtlayer import *
 from .cbam import CBAM
-from tools.visual import show_feature_map
 
 class wa_module(nn.Module):
-    '''
-    This module is used in networks that require a shortcut.
-    X --> output, LL(shortcut)
-    Args:
-        wavename: Wavelet family
-    '''
     def __init__(self, device,wavename='haar'):
         super(wa_module, self).__init__()
         self.dev=device
