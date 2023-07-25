@@ -6,11 +6,11 @@ Please ensure that the placement of your dataset corresponds to the diagram prov
 
 ![](https://github.com/xuecheng990531/EWSNet/blob/main/visual_output/data.png)
 
-## Steps for Training and Testing
+## :key: Steps for Training and Testing
 
-<li> <code>pip install -r requirements.txt </code></li>
+<li> :zap: <code>pip install -r requirements.txt </code></li>
 
-<li> run <code>main.py</code></li>
+<li> :snake: run <code>main.py</code></li>
 
-## Note
+## :exclamation: Note:exclamation:
 Remeber delete the .gitkeep and .DS_Store files before running this program.
