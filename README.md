@@ -8,6 +8,6 @@ Please ensure that the placement of your dataset corresponds to the diagram prov
 
 ## Steps for Training and Testing
 
-`1. ` pip install -r requirements.txt 
+<li> <code>pip install -r requirements.txt </code></li>
 
-`2. ` run <code>main.py</code>
+<li> run <code>main.py</code></li>
