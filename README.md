@@ -6,6 +6,8 @@ Please ensure that the placement of your dataset corresponds to the diagram prov
 
 ![](https://github.com/xuecheng990531/EWSNet/blob/main/visual_output/data.png)
 
-## Train and Test
+## Steps for Training and Testing
 
-run main.py
+`1. ` pip install -r requirements.txt 
+
+`2. ` run <code>main.py</code>
