@@ -10,7 +10,7 @@ Please ensure that the placement of your dataset corresponds to the diagram prov
 
 <li> :zap: <code>pip install -r requirements.txt </code></li>
 
-<li> :snake: run <code>main.py</code></li>
+<li> :snake: run <code>python main.py</code></li>
 
 ## :exclamation: Note:exclamation:
 Remeber delete the .gitkeep and .DS_Store files before running this program.
