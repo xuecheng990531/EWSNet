@@ -1,0 +1,610 @@
+%% 
+%% Copyright 2019-2021 Elsevier Ltd
+%% 
+%% This file is part of the 'CAS Bundle'.
+%% --------------------------------------
+%% 
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.2 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.2 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%% 
+%% The list of all files belonging to the 'CAS Bundle' is
+%% given in the file `manifest.txt'.
+%% 
+%% Template article for cas-dc documentclass for 
+%% double column output.
+
+\documentclass[a4paper,fleqn]{cas-dc}
+
+% If the frontmatter runs over more than one page
+% use the longmktitle option.
+
+%\documentclass[a4paper,fleqn,longmktitle]{cas-dc}
+
+%\usepackage[numbers]{natbib}
+%\usepackage[authoryear]{natbib}
+\usepackage[authoryear,longnamesfirst]{natbib}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\let\comment\undefined
+\usepackage[defaultcolor=red]{changes}
+% \usepackage[final]{changes}
+%%%Author macros
+\def\tsc#1{\csdef{#1}{\textsc{\lowercase{#1}}\xspace}}
+\tsc{WGM}
+\tsc{QE}
+%%%
+
+% Uncomment and use as if needed
+%\newtheorem{theorem}{Theorem}
+%\newtheorem{lemma}[theorem]{Lemma}
+%\newdefinition{rmk}{Remark}
+%\newproof{pf}{Proof}
+%\newproof{pot}{Proof of Theorem \ref{thm}}
+
+\begin{document}
+\let\WriteBookmarks\relax
+\def\floatpagepagefraction{1}
+\def\textpagefraction{.001}
+
+% Short title
+\shorttitle{Wavelet Transform and Edge Loss-based Three-Stage Segmentation
+Model for Retinal Vessel}    
+
+% Short author
+\shortauthors{X. Li, Y. Zheng, M. Zang and W. Jiao}  
+
+% Main title of the paper
+\title [mode = title]{Wavelet Transform and Edge Loss-based Three-Stage Segmentation
+Model for Retinal Vessel}  
+
+
+
+
+% % For a title note without a number/mark
+% %\nonumnote{}
+
+\author[1]{Xuecheng Li}
+\ead{2021317076@stu.sdnu.edu.cn}
+\credit{Software, Methodology, Validation, Writing original draft}
+\author[1]{Yuanjie Zheng}
+\cormark[1]
+\ead{yjzheng@sdnu.edu.cn}
+\cortext[cor1]{Corresponding author.}
+\credit{Conceptualization, Resources, Funding acquisition}
+\author[1]{Mengwei Zang}
+\ead{2021317153@stu.sdnu.edu.cn}
+\credit{Visualization}
+\author[2]{Wanzhen Jiao}
+\ead{zhener1003@163.com}
+\credit{Data curation}
+\affiliation[1]{organization={School of Information Science \& Engineering},addressline={Shandong Normal University}, city={No. 1 Daxue Road Changqing District},postcode={250358}, state={Jinan},country={China}}
+
+\affiliation[1]{organization={Department of Ophthalmology},addressline={Shandong Provincial Hospital Affiliated to Shandong First Medical University},city={ No. 324 Jingwuwei Seventh Road}, postcode={250021}, state={Jinan},country={China}}
+
+% Here goes the abstract
+\begin{abstract}
+Retinal vessel segmentation is a rapid method for the diagnosis of ocular diseases. By applying deep learning-based techniques to retinal images, more structural information about retinal vessels can be extracted to accurately assess the extent and classification of ocular diseases. However, current segmentation networks typically consist of a single network, making them vulnerable to noise, decreased image quality, and other interfering factors, resulting in erroneous segmentation outcomes. Additionally, the traditional skip connection mechanism introduces noise from the encoder features into the decoder, which reduces the refinement of the final segmentation result. A three-stage fundus vessel segmentation model called EWSNet is proposed to address these issues. The EWSNet utilizes two different models to extract and reconstruct coarse and fine blood vessels, respectively. The reconstructed results are fed into the refinement network to rebuild the edge portion of the retinal vessels, achieving higher segmentation performance. \added{Within the framework of EWSNet,} a wavelet-transformation-based sampling module is used to effectively suppress high-frequency noise in the features while using low-frequency features to reconstruct vascular information. Besides, a new edge loss function (E-BCE Loss) is designed to encourage more precise predictions at the segmentation edges. Experimental results on CHASE\_DB1, HRF, STARE, and a newly collected ultra-wide-angle fundus dataset (UWF) demonstrate that EWSNet has more robust segmentation performance in the microvascular region compared to the current mainstream models. The implementation and the trained networks are available on \href{https://github.com/xuecheng990531/EWSNet.git}{https://github.com/xuecheng990531/EWSNet}.
+\end{abstract}
+
+% Use if graphical abstract is present
+%\begin{graphicalabstract}
+%\includegraphics{}
+%\end{graphicalabstract}
+
+% Research highlights
+\begin{highlights}
+\item A novel three-stage segmentation network (EWSNet) is proposed for automatic and accurate retinal vessel segmentation.
+\item A sampling module based on wavelet transform is proposed, which can reconstruct the feature information of retinal vessels by using low-frequency signals while suppressing high-frequency noise propagation.
+\item A multi-directional Sobel edge extraction algorithm is proposed to better capture vessel information at different angles in the retinal image and improve the model's ability to extract microvessel features.
+
+\end{highlights}
+
+% Keywords
+% Each keyword is seperated by \sep
+\begin{keywords}
+Retinal vessel segmentation\sep Deep learning \sep Wavelet transform 
+\end{keywords}
+
+\maketitle
+
+% Main text
+\section{Introduction}\label{intro}
+\deleted{Fundus images are one of the most important indicators for diagnosing diseases related to the eye (e.g. Glaucoma, Diabetic Retinopathy, Cataracts, etc.)}\added{Fundoscopy, also known as ophthalmoscopy, is a diagnostic procedure that allows healthcare professionals to examine the back of the eye, including the retina, optic disc, blood vessels, and other structures. It is beneficial in assessing the health and integrity of retinal vessels, providing valuable insights into conditions such as hypertension, diabetic retinopathy, and other vascular disorders.} \cite{Vujosevic2020ScreeningFD}. However, manual analysis of fundus images are complicated due to factors such as inconsistent image quality and analysis difficulty. Currently, automated-based fundus image segmentation methods have become one of the hot research areas in ophthalmology. Compared with manual analysis, automated operation can reduce the cost of manual annotation and eliminate subjective emotional factors, thereby improving the accuracy of diagnosis \cite{Oh2021EarlyDO}.
+
+Automatic-based retinal vessel segmentation has been a challenging problem due to the complexity and noisy nature of fundus images. Over the last few decades, many unsupervised methods have been developed to address this problem. One of the most common methods is threshold segmentation \cite{7467731, PrasadReddy2021BloodVE, Wiharto2019BloodVS,Halder2016QualitativeCO}, which divides the image into foreground and background based on the difference in image gray levels. This method is simple, easy to implement, and fast to compute, but its results are greatly affected by noise, illumination changes, and other factors. Clustering algorithms have also found extensive utilization in the domain of retinal vessel segmentation tasks. Among these approaches, notable methods include K-means \cite{Hartigan1979AKC} and Fuzzy C-means \cite{Bezdek1984FCMTF}. The region grow algorithm \cite{Rahayu2022AutomaticPS,Rodrigues2020ELEMENTMR}, also considered a conventional approach for retinal vessel segmentation, starts with one or more seed points and expands outwards to form connected tissue structures to extract structural features of the blood vessels.
+
+With the excellent results achieved by fully convolutional neural networks (FCNs) \cite{Shelhamer2014FullyCN} in natural image segmentation tasks, segmentation models based on deep learning have become more popular, relying on consequential non-linear processing problems and large-scale data to achieve more accurate segmentation results than traditional machine learning methods \cite{Voulodimos2018DeepLF}. From FCN onwards, many excellent segmentation models have been gradually proposed, such as DeepLab \cite{Chen2016DeepLabSI}, PSPNet \cite{Zhao2016PyramidSP}, etc. Among them, UNet \cite{Ronneberger2015UNetCN}  has achieved outstanding performance in image segmentation, especially medical image segmentation tasks, which have been used as a basic framework for models in various image segmentation tasks by many domestic and overseas scholars. Guo et al. \cite{Guo2020SAUNetSA} devised an SA-UNet model that achieves high-precision retinal vessel segmentation of local regions by adding a spatial attention mechanism to the UNet framework. \deleted{However, the model associated with the UNet-based structure described above does not treat the coarse and fine vessels separately but rather treats them as the same object, resulting in a model that still needs to improve its performance in the part dealing with the micro-vessels region. In addition, the design of the skip connection leads to noise from the encoder stage being carried over to the decoder for recovery, resulting in inaccurate areas in the segmentation results of the model. To address the above issues, a multi-stage fundus vessels segmentation model was designed in our paper, the main contributions of which are as follows:}\added{However, existing segmentation networks often fail to effectively capture the morphological characteristics of fundus vessels, leading to suboptimal segmentation results in the microvascular region. Moreover, the impact of noise on model performance has been largely overlooked in previous works, as they do not incorporate noise suppression techniques into the segmentation process. Consequently, noise can propagate throughout the deep learning network, resulting in inaccurate segmentation regions. To address these limitations and achieve high-quality feature extraction while mitigating the influence of noise, we propose a novel three-stage retinal vessel segmentation model called EWSNet. The main contributions of our work are as follows:}
+\begin{itemize}
+	\item \deleted{We propose a multi-stage vessels segmentation model (EWSNet) based on wavelet transform with edge loss, which can effectively suppress the propagation of noise in the network and enhance the results of the model for vessels segmentation.} \added{We extract features of retinal vessel separately based on the different widths of the vessel. This innovative design effectively prevents the erroneous merging of thin vessel into adjacent thick ones while reducing the loss of details in vessel branching regions.}
+	\item \deleted{We use the Sobel edge detection algorithm to efficiently detect the edges of blood vessels from several angles of the image, as a way to design an edge loss function that helps the model to distinguish the vessels part from non-vessels regions.}\added{The complex shape of medical images poses a challenge for traditional Sobel operators, which only consider the gradients in the horizontal and vertical directions while overlooking potential edge information in other directions within the image. In EWSNet, we propose utilizing gradients from multiple directions to extract vascular edge information more comprehensively and accurately, enhancing the segmentation quality.}
+	\item \deleted{We use the wavelet transform to denoise the encoder features at the skip junction to reduce the effect of high-frequency noise on the final segmentation results. We also use the properties of the transform to implement a downsampling operation to retain more information in the downsampled features.} \added{A signal-based wavelet transform module is proposed. This module extracts the high-frequency noise from the features, decomposes and recovers the features using low-frequency signals, and achieves downsampling without losing complex details. The module further enhances the feature extraction capability while suppressing the noise in the network well compared to the conventional downsampling operation.}
+\end{itemize}
+
+\section{Related Work} 
+With the development of automated fundus vessels segmentation tasks, many excellent designs have been proposed over the last 20 to 30 years, which can be divided into two categories, unsupervised learning methods based on traditional machine learning methods and supervised methods represented by deep neural networks.
+
+\subsection{Traditional Machine Learning Methods}
+Most traditional machine learning-based methods do not need to be guided by labels and are characterized by the ability to segment vessel images without extensive training. However, the generalization capability of the method is not strong, requires manual adjustment of parameters multiple times, and is more sensitive to image greyscale, color changes, etc. 
+
+\added{The morphology of the vessel is a key indicator to detect retina disease in early stages and access the severity of the disease, such as diabetic retinopathy, age-related macular degeneration, and glaucoma. The redesigned level set model was used by Chen et al. \cite{Chen2017RetinaIV} to overcome the difficulty of low contrast during segmentation and to achieve accurate segmentation of blood vessels through continuous iterative evolution.} Mallick et al. \cite{Mallick2019BloodVD} detected blood vessels employing an improved multi-scale filter. A local thresholding mechanism was also introduced to reduce the false detection rate further and improve retinal vessel segmentation accuracy. The approach proposed by Sindhusaranya et al. \cite{Sindhusaranya2023RetinalBV} utilizes the enhanced fuzzy C-means clustering (EFCM) and root-guided decision tree (RGTC) methods to approximate retinal blood vessel segmentation. Subsequently, the root guided decision tree (RGDT) performs binary segmentation on inaccurately segmented regions. This algorithm has shown promising results on various datasets.
+
+\added{Many retinal diseases are characterized by the changes in blood vessels. Sundaram et al. \cite{Sundaram2019ExtractionOB} used multiple morphological transformations and multi-scale processing to highlight the fundus vessels and achieve segmentation of vessels regions. This method is fast and efficient and has more practical applications.} \deleted{In addition, edge detection-based methods are often used to implement fundus vessel segmentation.} \added{The primary diseases in the human eye are Ocular Hypertension, Glaucoma, Diabetic Muscular Edema, Diabetic Retinopathy, Color Blindness, Phonetic, Blindness, etc.} Chatterjee et al. \cite{Chatterjee2021RetinalBV} fused the results of the canny edge detector as well as the Gabor feature extractor results and used random forests to achieve the final vessels segmentation. Khan et al. \citet{Khan2022WidthwiseVB} employ directional triple-stick filtering to detect microvessels in retinal blood vessels and utilize subsequent processing techniques such as boundary compensation and morphology for segmentation refinement. Experimental results demonstrate that this method can rapidly and accurately obtain segmentation results on various datasets.
+
+\added{The analysis of fundus images can be broadly categorized into two types of segmentation: OD segmentation and vessel segmentation. Dash et al. \cite{Dash2022GuidanceIE} proposed a joint model of fast-guided and matched filters to segment vascular regions with low contrast accurately. The experimental results show that the method has stronger anti-interference ability than the traditional filter.} Kuppusamy et al. \cite{Kuppusamy2022RetinalBV} performed a detailed comparison of several edge detectors and finally found that more accurate fundus vessel segmentation results were achieved using the Kirsch filter than other filters. Li et al. proposed a fundus blood vessel segmentation method based on B-COSFIRE filtering \cite{Li2022RetinalVS}, which improves the segmentation efficiency and reduces the influence of noise on blood vessel feature extraction. The experimental results show that this method has a shorter detection time and higher accuracy than other traditional methods.
+\subsection{Deep Learning Methods}
+
+Deep neural networks that rely on large datasets for training are widely used in retinal vessel segmentation tasks. Compared to traditional machine learning methods, deep neural networks can learn various features of blood vessels from a large dataset and achieve accurate retinal vessel segmentation. 
+
+A deformable convolutional segmentation network was designed by Jin et al. \cite{Jin2018DUNetAD}. This design can capture the morphological information of blood vessels and achieve efficient vessels feature extraction. Wang et al.proposed a new context space UNet ( CSUNet ) model \cite{Wang2020CSUNetAC}, which extracts vessel features by designing a dual-channel encoder.  Jiang et al. \cite{Jiang2020AMR} used a residual attention module to reduce the negative impact of the background and eliminate noise. In addition, a bottom reconstruction module was used to aggregate feature information under different fields of perception, enabling the model to extract information about vessels of different thicknesses. The experimental results show that this approach can achieve excellent segmentation results. 
+
+
+Using generative adversarial networks (GANs) \cite {Goodfellow2014GenerativeAN}, Zhao et al. proposed a deep network Deep (Att-ResGAN) \cite{Zhao2021DeepAA}, including residual and attention modules. Experiments show that the method has achieved good segmentation results on multiple datasets. Kamran et al. \cite{Kamran2021RVGANSR} proposed a new multi-scale generation architecture (RV-GAN) for accurate segmentation of fundus vessels, which avoids the loss of resolution in the sequential encoding phase. Experimental results demonstrate the practicality of the design. Huang et al. \cite{Huang2022DBFUNetDB} proposed a novel two-branch fusion UNet model, which trains one of the branches by emphasizing a weighting scheme for difficult-to-learn regions to improve overall segmentation performance. Furthermore, Zhang et al. propose an end-to-end retinal vessel automatic segmentation method based on an improved UNet generative adversarial network \cite{Zhang2023EndtoEndAC}. Through this end-to-end network, the method achieves synchronized automatic segmentation and classification of blood vessels. This approach avoids the dependency on segmentation results in multi-classification tasks and has demonstrated excellent performance on multiple datasets.
+
+Efficient retinal vessel extraction is achieved by combining features from both encoders through a feature fusion module (FFM) and an attention skipping module (ASM). Ye et al. \cite{Ye2022MFINetMF} proposed the Multi-scale Feature Interaction Network (MFI-Net). The method uses channel attention at multiple scales to enhance multi-scale features while processing vessels of irregular thickness to segment blood vessels accurately. A novel two-branch model was devised by Li et al. \cite{Li2022AND}. Each branch is a multi-scale output and the segmentation performance of the microvessel region can be improved by fusing the outcomes of these two branches.  \added{Segmentation of microvessels is still a significant hotspot for vessel segmentation tasks. Yan et al. proposed a novel segmentation approach combining the segment-level and the pixel-wise loss functions to improve the problem of coarse and fine inhomogeneities in the blood vessels\cite{Yan2018JointSA}. This method further enhances the performance of the model without increasing the complexity of the model compared to other models. The Transformer \cite{Vaswani2017AttentionIA} architecture has gained significant popularity in medical image analysis and has demonstrated remarkable results. Zhang et al. introduced a novel segmentation model that combines the Transformer with the local binary energy function model (LBF) \cite{Zhang2023TUnetLBFRF}. This approach has shown promising outcomes on multiple datasets.} 
+
+The above work has completed the segmentation of fundus blood vessels, but the research on separate feature extraction based on the thickness characteristics of blood vessels is relatively scarce. The EWSNet proposed in this paper aims to use different feature extractors to complete the segmentation task of fundus blood vessels according to the thickness of blood vessels.
+
+\section{Proposed Methodology}
+\deleted{In this section, the basic network structure of the model, the loss function,the wavelet transform-based downsampling operation and skip connection feature processing are presented.} \added{In this section, the overall framework of EWSNet and the subnetwork structures within the framework will be introduced one by one. This includes the structures of ThinNet, ThickNet, and RefineNet, as well as the sampling module based on wavelet transform.}
+
+\subsection{Network Structure}\label{allmodel}
+The overall framework of the \added{EWSNet} model is shown in Figure\ref{arch_all}. As the characteristics of the coarse and fine vessel portions contained in the fundus vessel are very different, the coarse vessel portion can be easily extracted due to the high contrast with the background and the high variability of this portion. However, due to factors such as the similarity of the feature of the microvessels part to the background color and blurring, the model will have increased difficulty in extracting features from such areas. Therefore, treating these two parts of the blood vessel as one category, in general, will result in the model being less sensitive to the feature of the microvessels and the blood vessel segmentation results will not be satisfactory.
+
+\begin{figure*}[ht!]
+	\centering\includegraphics[width=0.75\linewidth]{EWSNet.png}
+	\caption{The structure of the EWSNet model.}
+	\label{arch_all}
+\end{figure*}
+
+For these reasons, we designed the ThickNet and ThinNet models to segment the coarse and fine vessel fractions. Specifically, we first divided the blood vessels into the labeled images into coarse and fine vessels part using morphological and other methods (described in Section \ref{split_chapter}). 
+
+In the ThinNet model, the labels of the fine vessels part were used for training, while in the ThickNet, only the coarse vessel labels were applied to the training of the model. Specifically, the input to the ThickNet is the original fundus image, while the input to the ThinNet includes the output of the ThickNet as well as the fundus image. During the training process, \deleted{the results of ThickNet and ThinNet are fused into RefineNet to further refine the segmentation results while removing the effect of noise on the segmentation results, resulting in the final vessels structure map.} \added{the results of merging ThickNet and ThinNet are used as inputs to RefineNet, the domain space transformation operation using wavelet transform can effectively suppress the interfering high-frequency noise present in the features while reconstructing the complex vascular detail information using the low-frequency texture attributes.}
+
+\subsection{ThickNet}
+Feature extraction and segmentation of this part of the coarse blood vessels can be easily achieved due to the significant difference between the feature and the background color. \deleted{Therefore, we designed a ThickNet model based on the encoder-decoder structure to segment the coarse vessels parts. Specifically, a 7$\times$7 convolutional kernel is used in the first layer of the model, a 5$\times$5 convolutional kernel is used in the second layer, while the subsequent 3$\times$3 convolutional kernels are used to avoid overfitting.}\added{Therefore, we use the encoder-decoder structure of the UNet and the convolutional blocks as the basic framework. Unlike the UNet structure, the feature extraction is done in the first and second layers of the model using 7$\times$7 and 5$\times$5 sized convolutional kernels. The reason for using large convolutional kernels is that the coarse vessels pixel values vary more smoothly, large convolutional kernels can better capture the smooth variations and extract more representative features. In addition, using larger convolutional kernels increases the receptive field of neurons and better adapts to various sizes and shapes of thick vessels. All other parts are similar to the UNet structure, using ReLU as the activation function after convolution in each layer.} \deleted{The reason for using large convolutional kernels is that the coarse vessels pixel values vary more smoothly, using large convolutional kernels can better capture the smooth variations and extract more representative features. In addition, using larger convolutional kernels increases the receptive field of neurons and better adapts to various sizes and shapes of thick vessels.}
+\subsection{ThinNet}
+The extraction of microvessels has always been difficult due to the complex grey distribution, variable morphology, and tiny diameter of the microvessels. In order to achieve better extraction of microvessels, a ThinNet based on multi-scale pyramid (MSP) and pixel attention module (PAM) mechanisms is proposed. Specifically, \deleted{in the ThinNet network, we utilize the residual convolution block as the base convolution block.}\added{ThinNet shares similarities with the UNet architecture, as the encoder-decoder structure of UNet has shown excellent performance in medical image segmentation tasks.} 
+
+
+\added{In each fundamental convolutional block, we use three 3 $\times$ 3 convolutions and the ReLU activation function as the residual module to achieve feature extraction of microvessels. This design allows cross-layer connectivity to capture more feature information, making the vessels features extracted by the network more accurate. The residual convolution can reduce information loss due to the use of cross-layer connectivity, which is crucial for feature retention in the microvessels fraction. 
+}
+
+\added{Moreover, MSP is utilized to extract multiscale information of blood vessels in order to capture finer details. In the decoder section of the network, PAM is utilized for weight allocation to the features from the encoder and the upsampled decoder, enhancing the importance of vascular-related information through higher weights. At the final layer of the model, the segmentation results of ThinNet are generated using the sigmoid function.}  
+
+\subsubsection{\added{Multi-scale Pyramid (MSP)}}
+A multi-scale pyramid (MSP) module is incorporated into the encoder of ThinNet to capture multi-scale vascular features within the network. 
+
+\begin{figure}[ht!]
+	\centering\includegraphics[width=\linewidth]{PAM.png}
+	\caption{The structure of the MSP and PAM.}
+	\label{msp_atten}
+\end{figure}
+
+
+
+The specific structure of the MSP is shown in Figure \ref{msp_atten}. Features from different convolutional layers can provide different information, which can help the model to better understand the vessels features after fusion. Moreover, fusing the feature of different layers can improve the detection accuracy of the microvessels, reduce the possibility of errors and omissions, and enhance the consistency of the model segmentation results with the labels. Specifically, in the MSP module, the feature in each layer is first scaled by a downsampling operation to match the size of the feature in the final layer, all of which are input into the convergence layer for dimensionality reduction to reduce computational effort. After the dimensionality reduction operation, the feature is fed into the pyramid module, which contains different sized atrous convolution operations to achieve spatial feature extraction capability while improving the accuracy and robustness of the microvessels segmentation. The formula for the MSP module is as follows:
+
+\added{
+\begin{align}
+f_{sum}&=Cat[Conv_{1}^{scale},\cdots, Conv_{i}^{scale}],i=[1,n]\\
+f_{out} &= MSC(Converge(f_{sum}))
+\end{align}
+}
+
+
+\deleted{Where $i$ represents the i-th layer in the n-layer network.} \added{where $Conv_{i}^{scale}$ represents the result of each layer scaled to the same feature size as the last layer, $Cat$ means stitching features by a number of channels, MSC stands for multiscale convolution operation in the graph, and $Converge$ means downscaling the resulting features.} 
+
+\subsubsection{\added{Pixel Aattention Module (PAM)}}
+As microvessels often exhibit similar colors to the background, a pixel attention module (PAM) is introduced in ThinNet to suppress irrelevant information and enhance its focus on vascular features. 
+
+The PAM module consists of pixel attention (PA, the region within the blue box in Figure \ref{msp_atten}) and channel attention (CA). The input features are initially processed in the PA component through two consecutive convolutions to introduce local spatial relationships and contextual information, which aids the model in capturing the correlations between input features for generating attention weights. The resulting output is then activated using the sigmoid function and multiplied by the mean value of the features to obtain the weight matrix for PA. In addition, CA is used to control the importance of each channel, enhancing the model's ability to extract and characterize vessels features. The specific framework of PAM is shown in Figure \ref{msp_atten}. \deleted{The input feature is processed in PAM by the channel attention mechanism and the pixel attention mechanism respectively to obtain two different weights, the two parts of the weights are multiplied with the original features to obtain the weighted features. Finally, the fusion of the two parts of the weighted features can improve the model's differentiation of the vessels features, making the model focus more on the vessels part and diluting the influence of the non-vessels part on the model. In the pixel attention mechanism, the input features undergo two convolution operations and one activation operation. The resulting features are then multiplied by the mean value of the input features to generate a spatial matrix. On the other hand, in the CA mechanism, the maximum pooling and average pooling results of the input features are combined and activated using the sigmoid function, resulting in a channel matrix. These two matrices are multiplied with the input features and summed to produce the final output results.} The formula for PAM is as follows:
+
+\begin{align}
+PA(F_{in}) & = [S\cdot CBE^2(F_{in})]\cdot M(F_{in})\\
+CA(F_{in})&=S \cdot [Pool_{avg}(F_{in})+Pool_{max}(F_{in})]\\
+F_{out}&=PA(F_{in})+CA(F_{in})
+\end{align}
+
+where $F_{in}$ represents input features, \added{$F_{out}$ represents the output of the PAM}, $S$ represents the sigmoid activation function, M represents the mean input feature, $CBE ^ 2$ represents two convolution operations. $CA (\cdot )$ represents channel attention, and $PA (\cdot )$ represents spatial attention.
+
+\subsection{\deleted{RefineNet}\added{RefineNet and wavelet transform-based sampling module}}
+Traditional segmentation models excel at segmenting images using a single model. However, they often yield results with numerous inaccurately segmented regions and need more precise delineation of edges. To address these limitations and refine the uncertain areas in the initial segmentation results, we propose the utilization of RefineNet. 
+
+RefineNet consists of five convolutional layers, where the encoded features from each layer are combined with the decoder features through skip connections to enhance the representation capability of vascular structures. Each layer of RefineNet comprises two convolutions of dimensions 3, followed by activation utilizing the ReLU function. In the last layer of the model, the refined segmentation result is generated through activation using the sigmoid function. As a result, the refinement offered by RefineNet leads to improved accuracy and more refined delineation of segmentation boundaries.
+
+The traditional downsampling methods can lead to information loss in small target regions, resulting in less than optimal recovery of the final segmentation results in the microvessel region. To further suppress noise and improve the accuracy of vessel segmentation, in RefineNet, a downsampling module based on wavelet transforms is implemented to suppress high-frequency noise while reconstructing vessel features through low-frequency signals. The mechanism based on the wavelet transform is shown in Figure\ref{wavelet}.
+
+
+\begin{figure}[ht!]
+	\centering\includegraphics[width=7cm]{wave_downSample.png}
+	\caption{The structure of the downsampling module based on the wavelet transform.}
+	\label{wavelet}
+\end{figure}
+
+
+\added{Taking the Haar wavelet as an example, we first define four filter kernels: $H_{LL}$, $H_{LH}$, $H_{HL}$, and $H_{HH}$ to process the input feature $x$. These four filter kernels are orthogonal to each other. The construction of these four convolutional kernels is as follows:
+\begin{align}
+H_{LL}  = \begin{bmatrix}
+  1&1 \\
+  1&1
+\end{bmatrix}\qquad 
+H_{LH}  = \begin{bmatrix}
+  -1&-1 \\
+  1&1
+\end{bmatrix}\\ 
+H_{HL}  = \begin{bmatrix}
+  -1&1 \\
+  -1&1
+\end{bmatrix}\qquad 
+H_{HH}  = \begin{bmatrix}
+  1&-1 \\
+  -1&1
+\end{bmatrix}
+\end{align}}
+
+
+\added{By convolving the input feature $x$ separately with each of the four filter kernels, we obtain the corresponding frequency features $\varphi_{LL}$, $\varphi_{LH}$, $\varphi_{HL}$ and $\varphi_{HH}$. Among them, $\varphi_{LL}$, $\varphi_{LH}$ and $\varphi_{HL}$ are low-frequency features, which contain strong texture information. They play a crucial role in distinguishing differences between objects for the model. On the other hand, $\varphi_{HH}$ represents high-frequency features, which contain a significant amount of noise. This noise poses obstacles to the reconstruction of blood vessels in the later stages.}
+
+\added{In the sampling module based on wavelet transform, the $\varphi_{HL}$ and $\varphi_{LH}$ are first summed better to describe the local detail of the input features. Meanwhile, the sum of these features is multiplied by $\varphi_{LL}$ to obtain a matrix that preserves the main features of the input signal. After that, the matrix is summed with the $\varphi_{LL}$ features to obtain the final downsampled features. Furthermore, the texture attention feature $F_{skip}$ is obtained by passing $\varphi_{LL}$ through the convolutional block attention module (CBAM)\citeyear{Woo2018CBAMCB}. By combining it with the decoder features through the skip connection, the noise in the encoder part can be suppressed to a certain extent, thus preventing any impact on the final segmentation result. The downsampling formula based on the wavelet transform is as follows:
+\begin{align}
+&\varphi_{LL,LH,HL,HH}  = H_{LL,LH,HL,HH}\otimes x\\
+&F_{down}=S(\varphi_{HL}+\varphi_{LH})\cdot \varphi_{LL}+\varphi_{LL}\\
+&F_{skip}  =CBAM[\varphi_{LL}] 
+\end{align}}
+
+\added{where $S$ represents the softmax operation. }
+
+\subsection{Loss Function}\label{loss}
+In medical image segmentation tasks, edge information can assist the model in better learning the contour information of the object. Since the edge information can distinguish essential features between the foreground and background of an object, they can assist the model in locating edge contours and improve the segmentation accuracy of the model. Most importantly, the small and heterogeneous distribution of fundus vessels in the image makes the distribution of positive and negative samples unbalanced. Using edge loss allows the model to focus on contour information and improve the accuracy of retinal vessel recognition. Therefore, a loss function based on multi-angle Sobel edge extraction (E-BCE Loss) was designed to assist the network in improving the segmentation of edge regions. 
+
+\deleted{In addition to extracting edge information in the horizontal and vertical directions with the Sobel operator,} \added{Deviating from prior practices that rely on Sobel convolution kernels for extracting edge features in the vertical and horizontal dimensions, our methodology is explicitly tailored for extracting blood vessel characteristics across diverse orientations. Beginning from the horizontal axis, each iterative rotation of 45 degrees counterclockwise manner serves as a convolution kernel for extracting the pertinent edge information pertaining to the blood vessels in that direction. This process is repeated until the angle from the horizontal axis reaches 135 degrees, encompassing a comprehensive analysis of the blood vessel features. The convolution kernels for each angle are shown in the Figure \ref{edgeSobel}.} \deleted{we extracted the edge information of the image again at 45 degrees and 135 degrees in the horizontal direction respectively and processed the edge information of the four parts to the final edge map.} This approach can enhance the sensitivity of the model to multiple directional features and improve the detection rate by extracting edges from different directions. Apart from that, multi-angle edge extraction can help the model to better understand the structural features of blood vessels. \deleted{The operator kernels for each direction and the final extraction results are shown in Figure\ref{edgeSobel}.}
+
+\begin{figure}[ht!]
+	\centering\includegraphics[width=0.7\linewidth]{MED.png}
+	\caption{Left: the Sobel operator kernel in each direction. Right: the fusion result of edge detection in four directions compared with the effect of traditional edge detection.}
+	\label{edgeSobel}
+\end{figure}
+
+\deleted{In the design of the loss function of the RefineNet, we take the prediction maps of the vessels segmentation network and the corresponding labels, using the method described above to achieve edge map extraction.} \added{For the design of the RefineNet loss function, we first apply the different angle convolution kernels, as mentioned above, to the prediction maps of the network and the corresponding labels in order to obtain the edge information in different directions.} The mean square error (MSE) loss function measures the difference between the predicted and ground truth distances for each pixel. \deleted{The equation for the Edge Loss is as follows:} \added{The loss function for this component is formulated as follows:}
+
+\begin{align}
+    &\hat{y_{edge}}_{[0, 45, 90, 135]}=K_{[0, 45, 90, 135]} \cdot pred_{map} \\
+    &y_{edge[0, 45, 90, 135]}=K_{[0, 45, 90, 135]} \cdot y \\
+	&\mathcal{L}_{Edge}=  \sum_{k=[0, 45, 90, 135]}^{}  MSE(\hat{y_{edge}}^{k},y_{edge}^{k})
+\end{align}
+
+\deleted{where $\hat{y_{edge}}$ and $y_{edge}$ represent the network prediction and label after the Sobel edge extraction, respectively.} \added{where $\hat{y_{edge}}_{[0, 45, 90, 135]}$ and $y_{edge[0, 45, 90, 135]}$ represent the predicted results of the model and the true labels, respectively, obtained by applying the Sobel convolution kernel in four directions to generate edge maps.} $\sum$ represents the summation of the losses obtained in each direction. The medical image segmentation task requires both the prediction of the regression of pixel values and the prediction of a specific classification for each pixel. Therefore, we introduce the loss function that combines binary cross entropy (BCE) and MSE to optimize these two tasks to improve the model's performance. The total loss function of the E-BCE Loss is as follows:
+
+\begin{align}
+	\mathcal{L}_{E-BCE}= \alpha \cdot \mathcal{L}_{Edge} + BCE(\hat{y},y)
+\end{align}
+
+where $\hat{y}$ represents the predicted outcome of the RefineNet and y represents the true label, we set the $\alpha$ to 0.5 in the experiment. In the ThickNet, we use the BCE function as the loss function for this model. In the ThinNet, we chose a combination of Focal loss and BCE loss as its loss function due to the particularly sparse and heterogeneous distribution of vessel content. In this loss function, we set the value of $\theta$ to 0.5. The loss function is as follows:
+
+\begin{align}
+	\mathcal{L}_{ThinNet}= \theta \cdot Focal(\hat{y},y) + BCE(\hat{y},y)
+\end{align}
+
+The total loss function of the EWSNet is as follows:
+
+\begin{align}
+	\mathcal{L}_{Total}= \mathcal{L}_{ThickNet}+\mathcal{L}_{ThinNet}+\mathcal{L}_{E-BCE}
+\end{align}
+
+\section{Evaluation}
+\subsection{Separation of blood vessels in fundus images}\label{split_chapter}
+
+\begin{figure}[ht!]
+	\centering\includegraphics[width=\linewidth]{split_process.png}
+	\caption{The process of separating blood vessels in fundus images.}
+	\label{split}
+\end{figure}
+
+The process of separating the coarse and fine vessels parts of the label is shown in Figure \ref{split}. For a labeled image, we first convert it to a greyscale map, using Gaussian filtering and thresholding to suppress unnecessary noise. Next, we perform morphological operations on the labeled image (defining structural elements, opening operations), bitwise\_and operations on the morphological result with the original label to obtain the coarse vessels part, and then inverse operations on the coarse vessels part with the original label to obtain the fine vessels part, which is a simple and efficient way of extracting coarse and fine vessels.
+
+\subsection{Datasets}
+In this paper, the CHASE\_DB1 \cite{Owen2009MeasuringRV}, STARE \cite{Hoover2000LocatingBV}, HRF \cite{Odstrcilk2013RetinalVS}, and the ultra-wide field fundus images (UWF) we collected from Shandong Provincial Hospital Affiliated to Shandong First Medical University are used as experimental data. 
+
+The CHASE\_DB1 includes 28 images of 999 $\times$ 960 sizes. We divided the 28 images into a training set and a test set, selecting 24 as the training set and the remaining four as the test set.
+
+The STARE consists of 20 images of size 700 $\times$ 605. We kept two images as the test set, and all the rest were used as the training set for repeated trials. No FOV mask was provided for this dataset to ensure consistency in subsequent training and testing.
+
+The HRF dataset comprises 45 images of size 3,304 $\times$ 2,336. We chose 40 randomly selected images as the training set for the experiments and the remaining five as a test machine to verify the segmentation accuracy of the model.
+
+Since the field of view of the above dataset is small, it does not provide more comprehensive retinal information \cite{wu2019comparing}. Therefore, we supplemented the above dataset with the UWF dataset obtained from Shandong Provincial Hospital Affiliated to Shandong First Medical University. The dataset contains 36 images, each of which has a resolution of 3000 $\times$ 3000. In the experiment, 30 images were selected as the training set and the remaining six as the test set. 
+
+In the data pre-processing, we resized all fundus data to a uniform 512$\times$512 size image. As the vessels region is in the middle of the spectrum in terms of green wavelengths, it can pass through the cornea and lens and is absorbed in the retina when the green wavelengths pass through the eye, making the brightness of the vessels more prominent compared to other regions. We extracted the green channel from the fundus image as input to the model and laid the foundation for subsequent experiments. The results of channel separation are shown in Figure \ref{process}.
+
+\begin{figure}[ht!]
+	\centering\includegraphics[width=\linewidth]{process.png}
+	\caption{The results of different color channels for retinal blood vessels.}
+	\label{process}
+\end{figure}
+
+
+\subsection{Evaluation Metrics and Implementation Details}
+\added{The proposed EWSNet network was built using the PyTorch 2.0 framework. All experiments were conducted on the NVIDIA A100 GPU platform with 40GB memory to minimize the time required for training and testing. For model training, the total number of training iterations is set to 140. In the experiment, the learning rate for RefineNet and ThinNet is set to 1e-4, while ThickNet has a learning rate 1e-6. All three networks utilize Adam\cite{Kingma2014AdamAM} as the optimizer for the model. The input size is 512$\times$512 for both training and testing. Due to memory constraints, we set the batch size to 2 for all experiments. The loss function of the entire network is the $\mathcal{L}_{Total}$ as introduced in section \ref{loss}.}
+
+
+In this experiment, we chose $F_{1}$ score ($F_{1}$), Accuracy ($ACC$), Specificity ($Spe$), Sensitivity ($Sen$) and the Area Under Curve ($AUC$) as evaluation metrics. We used \deleted{Tp} \added{TP} for true positives, FP for false positives, TN for true negatives and FN for false negatives, and their equations were as follows:
+
+\begin{align}
+	&F_{1} = \frac{2 \cdot TP}{2 \cdot TP + FN + FP} \\
+	&ACC=\frac{TP + TN}{TP + TN + FP + FN} \\
+	&Spe=\frac{\text{TN}}{\text{TN}+\text{FP}} \\
+	&Sen=\frac{TP}{TP+FN}
+\end{align}
+
+
+
+\subsection{Experiment Results}
+\textbf{Performance on the CHASE\_DB1 dataset}: 
+Table \ref{chasedb1_result} compares the proposed EWSNet and several other popular vessel segmentation models on the CHASE\_DB1 dataset. \deleted{Compared with other models, EWSNet outperformed other models in $F_{1}$,$ACC$, and $AUC$ metrics.} \added{Compared to other models, EWSNet achieved impressive scores of 0.847, 0.978, and 0.930 in the F1, ACC, and AUC metrics, respectively. In terms of the $F_{1}$ metric, its performance has improved by 2$\%$ compared to the second-ranked method \cite{Tan2023OCT2FormerAR}. Moreover, for method \cite{Tan2023ALN} with lower $F_{1}$ metrics, their performance has witnessed a significant growth of 20$\%$, thus providing ample evidence for the reliability of EWSNet's segmentation.} \deleted{Although the EWSNet did not reach the optimum in the  $Sen$ and  $Spe$ metrics, it also reached the second highest standard. It is noteworthy that the DDRNet and UNet have excellent results in  $Sen$ and  $Spe$ metrics, they do not perform well enough in $F_{1}$ and other evaluation metrics.} \added{On the contrary, the EWSNet has a balanced performance among all aspects of the metrics, and its experimental evaluation results are relatively high, even if it is inferior to other models in some metrics. The visual representations obtained from diverse models on the CHASE\_DB1 dataset are depicted in Figure \ref{chasedb1}.} 
+
+\added{Compared with other models, EWSNet exhibits enhanced continuity and sharper boundaries in the segmentation of blood vessels. Conversely, other models display a higher incidence of erroneous segmentation areas. Moreover, the recurrent downsampling of vascular information leads to information loss, resulting in less cohesiveness in the final segmentation outcome, ultimately leading to a more chaotic result, which compellingly substantiates the effectiveness of EWSNet's design.}
+\begin{figure}[ht!]
+	\centering\includegraphics[width=\linewidth]{chasedb1.png}
+	\caption{\added{Visual comparison between EWSNet and state-of-the-art networks for retinal vessel segmentation on CHASE\_DB1 dataset.}}
+	\label{chasedb1}
+\end{figure}
+
+\begin{table*}[H]
+	\caption{The performance of our EWSNet model and currently popular segmentation models on the CHASE\_DB1 dataset. The best results under each metric are shown in bold, the second highest is underlined. Abnormal indicators are replaced with horizontal lines.}
+	\centering
+	% \scalebox{0.8}{
+		\begin{tabular}{lcccccc}
+		\toprule
+		$Name$ &  $F_{1}$ & $ACC$ &  $Sen$ &  $Spe$ & $AUC$ \\ 
+		\midrule
+		BCDUNet \cite{Azad2019BiDirectionalCU}  & 0.775 & 0.970 & 0.763 & 0.978 & 0.873 \\
+		LadderNet \cite{Zhuang2018LadderNetMN}  & 0.771 & 0.968 & 0.774 & 0.980 & 0.878 \\
+		AACA-MLA-D-UNet \cite{multilevel}  & 0.791 & 0.971 & 0.798 & 0.976 & 0.890 \\
+		R2-UNet \cite{Alom2019RecurrentRU}  & 0.823 & \underline{0.976} & 0.854 & 0.926 & 0.912 \\
+		TernausNet \cite{Iglovikov2018TernausNetUW}&0.801&0.972&0.808&0.975&0.893\\
+		DUNet \cite{Jin2018DUNetAD}&0.724&0.965&0.663&0.688&0.825\\
+		DGaussianNet \cite{AlvaradoCarrillo2021DGaussianNetAD} &0.826&\underline{0.976}&0.831&0.980&0.908\\
+		DDRNet \cite{Hong2021DeepDN}&0.728&0.965&\textbf{0.997}&-&0.834\\
+        UNet \cite{Ronneberger2015UNetCN}&0.758&0.968&0.728&\textbf{0.985}&0.857\\
+    \added{OCT2 Former} \cite{Tan2023OCT2FormerAR}&\underline{0.840}&0.975&\underline{0.886}&0.977&\underline{0.925}\\
+        \added{DMF-AU}\cite{Tan2023ALN} &0.700&0.963&0.674&0.950&0.857\\
+		\textbf{EWSNet (Ours)}  & \textbf{0.847} & \textbf{0.978} & 0.854 & \underline{0.982} & \textbf{0.930}\\
+		\bottomrule
+		\end{tabular}
+	% }
+	\label{chasedb1_result}
+\end{table*}
+
+\textbf{Performance on the STARE dataset}: 
+Table \ref{stare_result} shows the performance of EWSNet and other models on the STARE dataset. The proposed EWSNet model still achieves higher evaluation results than the other models in the table for a limited number of training epochs, comparing favorably with the second-highest model metrics indicated by underlining in $F_{1}$, $ACC$, and $AUC$ metrics. The EWSNet improved by 5.4\% compared to the $F_{1}$ metric results in the table for method \cite{Hong2021DeepDN}. In addition, the EWSNet also achieves excellent results in the AUC metric, with a 2\% improvement compared to the method \cite{Hong2021DeepDN}, reaching 0.884. EWSNet has achieved a relatively high level of segmentation performance with only 140 iterations, indicating that treating coarse and fine blood vessels as distinct features and employing two sub-networks for feature extraction is more effective than conventional structures. This methodology facilitates the acquisition of vascular feature information that is typically challenging for traditional networks to learn.
+\begin{table*}[H]
+\centering
+\caption{The performance of our EWSNet model and currently popular segmentation
+models on the STARE dataset. The best results under each metric are shown in bold and the second highest results are underlined. Abnormal indicators are replaced with horizontal lines.}
+\label{stare_result}
+% \scalebox{0.8}{
+	\begin{tabular}{lcccccc}
+	\toprule
+	$Name$  & $F_{1}$ & $ACC$ &  $Sen$ &  $Spe$ & $AUC$ \\ \midrule
+	BCDUNet \cite{Azad2019BiDirectionalCU}  & 0.623 & 0.941 & - & 0.981 & 0.740 \\
+	LadderNet \cite{Zhuang2018LadderNetMN}  & 0.721 & 0.948 & 0.675 & 0.978 & 0.826 \\
+	AACA-MLA-D-UNet \cite{multilevel}  & 0.715 & 0.948 & - & - & 0.826 \\
+	R2-UNet \cite{Alom2019RecurrentRU}  & - & 0.922 & \textbf{0.996} & - & 0.640 \\
+	TernausNet \cite{Iglovikov2018TernausNetUW}  & 0.675 & 0.945 & 0.576 & \underline{0.985} & 0.780 \\
+	DUNet \cite{Jin2018DUNetAD}   & - & 0.929 & - & \textbf{0.994} & 0.665 \\
+	DGaussianNet \cite{AlvaradoCarrillo2021DGaussianNetAD}   & 0.698 & 0.948 & 0.617 & 0.982 & 0.800 \\
+	DDRNet \cite{Hong2021DeepDN}   & 0.747 & 0.951 & \underline{0.947} & - & 0.867 \\
+    UNet \cite{Ronneberger2015UNetCN} & 0.696 & 0.948 & - & - & 0.806 \\
+    \added{OCT2 Former} \cite{Tan2023OCT2FormerAR}&\underline{0.786}&\underline{0.958}&0.814&0.968&\underline{0.881}\\
+    \added{DMF-AU}\cite{Tan2023ALN} &0.649&0.937&0.602&0.971&0.787\\
+	\textbf{EWSNet (Ours)}  & \textbf{0.788} & \textbf{0.964} & 0.794 & 0.972 & \textbf{0.884} \\ \bottomrule
+	\end{tabular}
+% }
+\end{table*}
+\begin{figure}[ht!]
+	\centering\includegraphics[width=\linewidth]{stare.png}
+	\caption{\added{Visual comparison between EWSNet and state-
+of-the-art networks for retinal vessel segmentation on STARE dataset.}}
+	\label{result_pic_stare}
+\end{figure}
+
+Figure \ref{result_pic_stare} shows the segmentation results of several models with better experimental metrics.  \deleted{It can be seen that the EWSNet, with the wavelet transform-based pooling operation, can achieve the downsampling operation without losing the existing vessels information, resulting in clearer and more explicit segmentation results compared to other models with a limited number of experimental iterations. Other models with a limited number of training iterations are likely to segment the wrong region as the vessels region, leading to a decrease in the accuracy of segmentation.}\added{When segmenting blood vessel areas similar in color to the background, EWSNet exhibits a noteworthy advantage over other models. This is due to the implementation of the MSP module, which adeptly extracts vascular information across multiple scales. Extracting vascular features at varying scales alleviates the impact of factors such as image quality and lighting conditions on vascular recognition. Simultaneously, it comprehensively captures and delineates the vessels' morphological variations and intricate details, thereby augmenting the precision of vascular identification.}
+
+\textbf{Performance on the HRF dataset}: 
+The results obtained by different models on the HRF dataset are presented in Table \ref{hrf_result}. The HRF dataset has a richer microvessel region compared with the STARE and CHASE\_DB1 datasets, which is a vital guide to test the design of ThinNet. \deleted{It can be seen that the EWSNet has an excellent performance in $F_{1}$, $ACC$ and $AUC$ metrics, especially in terms of AUC metrics, which reached 0.903.}\added{In the task of medical image segmentation, the F1 metric plays a crucial role in reflecting the balance of a model's classification ability. EWSNet achieved an impressive F1 score of 0.774 on the HRF dataset, surpassing other mainstream segmentation models. This result serves as evidence for the superior segmentation capabilities of EWSNet, particularly in dealing with the challenge of imbalanced positive and negative samples in retinal images.}
+\begin{figure}[ht!]
+	\centering\includegraphics[width=\linewidth]{hrf.png}
+	\caption{\added{Visual comparison between EWSNet and state-of-the-art networks for retinal vessel segmentation on HRF dataset.}}
+	\label{result_pic_hrf}
+\end{figure}
+Figure \ref{result_pic_hrf} showcases the visual results of various models on the HRF dataset. The segmentation results of the other models are satisfactory in the large vessels region but not in the small vessels region, which is similar to the background color. In contrast, EWSNet utilizes ThinNet to extract features and reconstruct the fine details of microvessels, restoring sharper and more distinct edges of the microvascular network. Additionally, due to the excessive amount of noise in medical images, other models often produce more erroneous segmentation results than EWSNet, resulting in a more cluttered appearance. By employing the sampling operation of the wavelet transform, EWSNet effectively suppresses the propagation of high-frequency noise features, yielding cleaner and more accurate segmentation results.
+\begin{table*}[H]
+	\centering
+	\caption{The performance of our EWSNet model and currently popular segmentation
+	models on the HRF dataset. The best results under each metric are shown in bold and the second highest results are underlined. Abnormal indicators are replaced with horizontal lines.}
+
+	\label{hrf_result}
+    \begin{tabular}{lcccccc}
+    \toprule
+    $Name$  & $F_{1}$ & $ACC$ &  $Sen$ &  $Spe$ & $AUC$ \\ \midrule
+    BCDUNet \cite{Azad2019BiDirectionalCU}  & 0.747 & 0.951 & \textbf{0.947} & - & 0.867 \\
+    LadderNet \cite{Zhuang2018LadderNetMN}  & 0.746 & 0.967 & 0.773 & 0.972 & 0.876 \\
+    AACA-MLA-D-UNet \cite{multilevel}  & 0.725 & 0.966 & 0.808 & 0.965 & \underline{0.886} \\
+    R2-UNet \cite{Alom2019RecurrentRU}  &0.731 & 0.966 & 0.780 & 0.968 & 0.874 \\
+    TernausNet \cite{Iglovikov2018TernausNetUW}  & 0.731 & 0.966 & 0.780 & 0.968 & 0.874 \\
+    DUNet \cite{Jin2018DUNetAD}   & 0.655 & 0.958 & 0.644 & \textbf{0.978} & 0.881 \\
+    DGaussianNet \cite{AlvaradoCarrillo2021DGaussianNetAD}   & \underline{0.753} & 0.969 & 0.787 & \underline{0.974} & 0.881 \\ 
+    DDRNet \cite{Hong2021DeepDN}   & 0.745 & 0.969 & 0.782 & 0.967 & 0.878 \\
+    UNet \cite{Ronneberger2015UNetCN} & 0.752 & \underline{0.970} & 0.765 & 0.610 & 0.872 \\
+    \added{OCT2 Former} \cite{Tan2023OCT2FormerAR}&0.632&0.961&0.576&0.971&0.776\\
+    \added{DMF-AU}\cite{Tan2023ALN} &0.628&0.959&0.569&0.971&0.812\\
+    \textbf{EWSNet (Ours)}  & \textbf{0.774} & \textbf{0.971} & \underline{0.831} & 0.968 & \textbf{0.903} \\ \bottomrule
+    \end{tabular}
+\end{table*}
+
+
+
+
+\textbf{Performance on the UWF dataset}: 
+Table \ref{uwf_result} shows the performance of EWSNet and other segmentation models on the ultra-wide field fundus dataset (UWF). \deleted{In the results of this dataset, the EWSNet achieved 0.816, 0.985, 0.915, and 0.949 in $F_{1}$,$ACC$, $Sen$, and $AUC$ metrics, respectively, which are more excellent compared with the evaluation metrics of other models, proving the correctness of the design idea of EWSNet.}\added{Compared to the second-highest method \cite{Alom2019RecurrentRU} according to the $F_1$ metric, EWSNet demonstrates a leading edge of approximately 2$\%$. In terms of the AUC metric, EWSNet exhibits improvements ranging from a minimum of 2.2$\%$to a maximum of 16$\%$ compared to other methods.}
+\begin{table*}[H]
+	\centering
+	\caption{The performance of our EWSNet model and other popular segmentation
+	models on the UWF dataset. The best results under each metric are shown in bold and the second highest results are underlined. Abnormal indicators are replaced with horizontal lines.}
+	\label{uwf_result}
+	% \scalebox{0.5}{
+		\begin{tabular}{lcccccc}
+		\toprule
+		$Name$  & $F_{1}$ & $ACC$ &  $Sen$ &  $Spe$ & $AUC$ \\ \midrule
+		BCDUNet \cite{Azad2019BiDirectionalCU}  & 0.755 & 0.981 & 0.749 & \textbf{0.987} & 0.869 \\
+		LadderNet \cite{Zhuang2018LadderNetMN}  & 0.723 & 0.979 & 0.743 & \textbf{0.987} & 0.865 \\
+		AACA-MLA-D-UNet \cite{multilevel}  & 0.727 & 0.978 & 0.750 & \underline{0.985} & 0.868 \\
+		R2-UNet \cite{Alom2019RecurrentRU}  &\underline{0.801} & 0.984 & \underline{0.868} & 0.980 & \underline{0.928} \\
+		TernausNet \cite{Iglovikov2018TernausNetUW}  & 0.723 & 0.979 & 0.725 & \textbf{0.987} & 0.856 \\
+		DGaussianNet \cite{AlvaradoCarrillo2021DGaussianNetAD}   & 0.795 & \underline{0.984} & 0.830 & 0.983 & 0.908 \\
+		DDRNet \cite{Hong2021DeepDN}   & 0.759 & 0.982 & 0.841 & - & 0.893 \\
+        UNet \cite{Ronneberger2015UNetCN} & 0.750 & 0.981 & 0.798 & 0.972 & 0.887 \\
+        \added{OCT2 Former} \cite{Tan2023OCT2FormerAR}&0.773&0.982&0.871&0.971&0.922\\
+        \added{DMF-AU}\cite{Tan2023ALN} &0.655&0.974&0.645&0.838&0.816\\
+		\textbf{EWSNet (Ours)}  & \textbf{0.816} & \textbf{0.985} & \textbf{0.915} & 0.975 & \textbf{0.949} \\ \bottomrule
+		\end{tabular}
+	% }
+\end{table*}
+\begin{figure}[ht!]
+	\centering\includegraphics[width=\linewidth]{uwf.png}
+	\caption{\added{Visual comparison between EWSNet and state-of-the-art networks for retinal vessel segmentation on UWF dataset.}}
+	\label{result_uwf}
+\end{figure}
+
+Figure \ref{result_uwf} showcases the visual results of different segmentation models on the UWF dataset. It is evident that, in the region of fine microvessels, the other models fail to correctly segment the microvessels outside the main vascular structure, erroneously labeling this region as the background. In contrast, EWSNet effectively preserves the features of microvessels through its sub-sampling module based on wavelet transform, resulting in more precise segmentation outcomes.
+
+
+
+\textit{Summary}: Through experimental comparisons on four datasets, EWSNet can obtain excellent segmentation results within a limited training duration. With the assistance of the MSP module, utilizing wavelet-based low-pass filtering as the input feature for skip connections, this model effectively extracts vascular information while reducing the influence of noise on the segmentation results. Moreover, the experimental findings also indicate that treating large vessels and fine microvessels as two distinct features in the segmentation task helps the model better comprehend different vascular structural characteristics, leading to more accurate vessel segmentation outcomes.
+
+\section{Ablation Studies}
+The main focus of this section is to investigate the selection of hyperparameters in the loss function and the role of each module in EWSNet. We use the CHASE\_DB1 dataset as the test set. Table \ref{losshyper} shows the effect of different values of hyperparameters in the loss function on the performance. When the values of both $\theta$ and $\alpha$ are chosen to be 0.5, the $F_{1}$ metric at this time has a maximum value of 0.847. Since the $F_{1}$ score is more over-responsive to the segmentation results than other metrics, in designing the hyperparameters of the loss function, we choose 0.5 as the hyperparameters of $\alpha$ and $\theta$ for training and testing.
+
+
+\begin{table}
+  \begin{minipage}[p]{0.5\linewidth}
+  \centering
+  \resizebox{\linewidth}{!}{%
+	\begin{tabular}{ccccccc}
+        \toprule
+        $\theta$ & $\alpha$ & $F_1$ & $ACC$ & $Sen$ & $Spe$ & $AUC$ \\
+        \midrule
+        \multirow{3}{*}{0.3} & 0.3 & 0.825 & 0.975 & 0.866 & 0.978 & \textbf{0.924} \\
+         & 0.5 & 0.838 & 0.978 & \textbf{0.888} & 0.956 & 0.923 \\
+         & 0.7 & 0.830 & 0.977 & 0.869 & \textbf{0.981} & 0.925 \\
+         \midrule
+        \multirow{3}{*}{0.5} & 0.3 & 0.841 & 0.978 & 0.863 & 0.972 & 0.924 \\
+         & 0.5 & \textbf{0.847} & \textbf{0.978} & 0.854 & 0.980 & 0.920 \\
+         & 0.7 & 0.833 & 0.976 & 0.857 & 0.974 & 0.920 \\
+         \midrule
+        \multirow{3}{*}{0.7} & 0.3 & 0.823 & 0.976 & 0.834 & 0.977 & 0.909 \\
+         & 0.5 & 0.829 & 0.976 & 0.816 & 0.961 & 0.902 \\
+         & 0.7 & 0.823 & 0.976 & - & - & 0.915 \\
+         \bottomrule
+        \end{tabular}
+  }
+  \end{minipage}
+  \begin{minipage}[p]{0.45\linewidth} 
+	\centering 
+	\resizebox{\linewidth}{!}{\includegraphics[width=\linewidth]{params.png}}
+  \end{minipage}
+  \caption{The effect of hyperparameters of $\theta$ and $\alpha$ in the
+loss function on the segmentation performance. Abnormal indicators are replaced with horizontal lines.} 
+  \label{losshyper}
+  \end{table}
+
+In addition, we also conducted experiments to investigate the effect of the wavelet transform-based downsampling mechanism and the skip connection on the segmentation results. Table \ref{wavehyper} shows the effect of wavelet transform-based downsampling and low-pass features in the skip connection on the model performance. It can be seen that the low-pass filtered information from the wavelet transform is extracted from the features for downsampling, which can well preserve the morphology and contour information of the blood vessels in the low-frequency information and can bring some performance improvement to the network compared with not using the wavelet transform-based approach. In addition, using the low-frequency information as the feature in the skip connection can eliminate the segmentation uncertainty caused by the high-frequency noise, which proves the effectiveness of using the low-frequency information in the filter as the downsampling and skip connection.
+
+
+\begin{table}[H]
+	\centering
+	\caption{The impact of the wavelet transform sampling module on the segmentation performance of EWSNet. $case$ 1 signifies the utilization of wavelet transformation, $case$ 2 denotes the omission of the skip connection module, while $case$ 3 refers to the exclusion of the wavelet transform module.}
+	\label{wavehyper}
+	\scalebox{0.8}{
+		\begin{tabular}{ccc|ccccc}
+		\toprule
+		$case1$ & $case2$ & $case3$ & $F_{1}$ & $ACC$ &  $Sen$ &  $Spe$ & $AUC$ \\
+		\midrule
+		$\surd$&  &  & \textbf{0.847} & \textbf{0.978} & \textbf{0.854} & 0.980 & \textbf{0.920} \\
+		& $\surd$ &  & 0.840 & 0.978 & 0.851 & 0.981 & 0.918 \\
+		&  & $\surd$ & 0.831 & 0.976 & 0.852 & 0.979 & 0.918 \\
+		\bottomrule
+		\end{tabular}
+	}
+\end{table}
+
+To further verify the noise suppression ability of EWSNet, we use the CHASE\_DB1 dataset as the experimental data, adding Gaussian noise to the test set to verify the resistance performance of the model to noise.  During the experiment, we set the mean to 0 and the variance to 10 to add Gaussian noise. 
+
+
+The left side of Table \ref{noise} shows how much noise affects the segmentation performance, the right side represents the performance degradation of different models in a noisy environment. It can be seen that the model performance of EWSNet before and after adding noise decreases by $1.77\%$. In contrast, the performance metrics of other models after adding noise decrease by $7.8\%$ at most and $3.2\%$ at least, all of which are greater than the performance decrease of the EWSNet. Likewise, The trend of the curve $F_{1}$ on the right side of the figure proves that the noise has little effect on the segmentation results of EWSNet. It can be concluded that the introduction of low-pass filtering results in the wavelet transform as the feature of downsampling and skip connection in the EWSNet can play a significant role in suppressing the noise and achieving more accurate segmentation results.
+
+\begin{table*}
+  \begin{minipage}[p]{0.5\linewidth}
+  \centering
+  \resizebox{\linewidth}{!}{%
+	\begin{tabular}{l|ccc}
+		\toprule
+		$Architecture$ & $F_{1} $ & $F_{1Noise}$ &$Degradation$    \\
+		\midrule
+		R2-UNet \cite{Alom2019RecurrentRU} & 0.823 & 0.796 &-3.2\%    \\
+		DGaussianNet \cite{AlvaradoCarrillo2021DGaussianNetAD} & 0.828 & 0.763 &-7.8\%    \\
+		DDRNet \cite{Hong2021DeepDN} & 0.782 &0.734  &-6.1\%  \\
+		\textbf{EWSNet (Ours)} & \textbf{0.847} & \textbf{0.832} &\textbf{-1.77\%}  \\
+		\bottomrule
+	\end{tabular}
+  }
+  \end{minipage}
+  \begin{minipage}[p]{0.3\linewidth} 
+	\centering 
+	\resizebox{\linewidth}{!}{\includegraphics[width=0.3\linewidth]{noise.png}}
+  \end{minipage}
+  \caption{(Left) The degree to what noise weakens the performance of different segmentation models. (Right) Curves of the effect of noise on $F_{1}$ metric.} 
+  \label{noise}
+  \end{table*}
+
+
+
+\section{Conclusion}
+In this paper, a three-stage retinal vessel segmentation model (EWSNet) is proposed to improve the segmentation performance of microvessels by separating coarse and fine vessels in the fundus vessels and optimizing the segmentation results of coarse and fine vessels using the denoising capability of the wavelet transform. Furthermore, the design of the loss function using edge information helps the model to better understand the distribution of blood vessels and the relationship between the vessels part and the background. Experiments demonstrate that this design can effectively enhance the extraction and segmentation of blood vessels. \deleted{Although the network has good segmentation performance, the training time and inference time of the model are long. In the future, the model can be optimized to reduce the computation time and achieve real-time vessels segmentation to assist in the diagnosis of eye-related diseases more rapidly.} \added{However, due to the limitations of medical imaging data and the complexity of EWSNet's design, the model's generalization ability still needs to be improved, leaving ample room for improvement. In future work, we will continue to explore more streamlined network architecture designs to enhance the model's segmentation performance and generalization ability.}
+
+
+
+\section*{Declaration of competing interest}
+We declare that we do not have any commercial or associative interest that represents a conflict of interest in connection with the work submitted.
+
+
+\section*{Funding.}
+This work is supported by Taishan Scholar Project of Shandong Province (TSHW201502038); China Postdoctoral Science Foundation (No. 2021M691982); Natural Science Foundation of Shandong Province (ZR2018Z, B0419); National Natural Science Foundation of China (81871508, 61773246).
+
+
+\section*{Data availability.} Data underlying the results presented in this paper are not publicly available at this time but may be obtained from the authors upon reasonable request.
+
+\added{\printcredits}
+
+%% Loading bibliography style file
+%\bibliographystyle{model1-num-names}
+\bibliographystyle{cas-model2-names}
+
+% Loading bibliography database
+\bibliography{cas-refs}
+
+% % Biography
+% \bio{}
+% % Here goes the biography details.
+% \endbio
+
+% \bio{pic1}
+% % Here goes the biography details.
+% \endbio
+
+\end{document}
+
