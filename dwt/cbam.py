@@ -3,8 +3,6 @@
 
 import torch
 import torch.nn as nn
-from torch.nn.modules import pooling
-from torch.nn.modules.flatten import Flatten
 
 
 

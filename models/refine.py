@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from dwt.wlcbam import wa_module
-from tools.visual import show_feature_map
 # 基本卷积块
 class Conv(nn.Module):
     def __init__(self, C_in, C_out):
@@ -50,12 +49,6 @@ class DownSampling_wa(nn.Module):
         self.pool = nn.MaxPool2d(kernel_size=2)
     def forward(self, x):
         down_fea,skip_fea=self.wa(x)[0],self.wa(x)[1]
-        origin_down=self.pool(x)
-        # if x.shape[1]==64:
-        #     show_feature_map(feature_map=down_fea,filename='downed_feature')
-        #     show_feature_map(feature_map=skip_fea,filename='skip_feature')
-        #     show_feature_map(feature_map=x,filename='origin')
-        #     show_feature_map(feature_map=origin_down,filename='origin_down')
         return down_fea,skip_fea
 
 
