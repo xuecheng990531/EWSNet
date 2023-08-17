@@ -1,10 +1,10 @@
-# Wavelet Transform and Edge Loss-based Three-Stage Segmentation Model for Retinal Vessel
+# Wavelet transform and edge loss-based three-stage segmentation model for retinal vessel
 
 ## Introduction
 
-This is an official release of the paper **Wavelet Transform and Edge Loss-based Three-Stage Segmentation Model for Retinal Vessel**. 
+This is an official release of the paper **Wavelet transform and edge loss-based three-stage segmentation model for retinal vessel**. 
 
-> [**Wavelet Transform and Edge Loss-based Three-Stage Segmentation Model for Retinal Vessel**](https://doi.org/10.1016/j.bspc.2023.105355)
+> [**Wavelet transform and edge loss-based three-stage segmentation model for retinal vessel**](https://doi.org/10.1016/j.bspc.2023.105355)
 > [[Get Paper](https://doi.org/10.1016/j.bspc.2023.105355)]
 
 
