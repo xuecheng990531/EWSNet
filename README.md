@@ -1,5 +1,12 @@
-# EWSNet
-Code of "Wavelet Transform and Edge Loss-based Three-Stage Segmentation Model for Retinal Vessel"
+# Wavelet Transform and Edge Loss-based Three-Stage Segmentation Model for Retinal Vessel
+
+## Introduction
+
+This is an official release of the paper **Wavelet Transform and Edge Loss-based Three-Stage Segmentation Model for Retinal Vessel**. 
+
+> [**Wavelet Transform and Edge Loss-based Three-Stage Segmentation Model for Retinal Vessel**](https://doi.org/10.1016/j.bspc.2023.105355)
+> [[Get Paper](https://doi.org/10.1016/j.bspc.2023.105355)]
+
 
 ## :key: Steps for Training and Testing
 
