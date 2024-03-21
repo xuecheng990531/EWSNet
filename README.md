@@ -10,6 +10,9 @@ This repository contains the implementations of the paper 'Wavelet transform and
 
 This repository currently provides examples of implementing, training, and inferring with the core model code. It also includes guidance on running the code on sample datasets. Additionally, there are suggestions and code for visual analysis.
 
+<!-- 添加一个图片 -->
+![Image Description](visual_output\model.jpg)
+
 
 > [**Wavelet transform and edge loss-based three-stage segmentation model for retinal vessel**](https://doi.org/10.1016/j.bspc.2023.105355)
 > [[Get Paper](https://doi.org/10.1016/j.bspc.2023.105355)]
