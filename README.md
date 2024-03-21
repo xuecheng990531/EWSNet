@@ -13,8 +13,6 @@ This repository currently provides examples of implementing, training, and infer
 <!-- 添加一个图片 -->
 ![image](https://github.com/xuecheng990531/EWSNet/blob/main/visual_output/model.jpg)
 
-
-> [**Wavelet transform and edge loss-based three-stage segmentation model for retinal vessel**](https://doi.org/10.1016/j.bspc.2023.105355)
 > [[Get Paper](https://doi.org/10.1016/j.bspc.2023.105355)]
 
 
