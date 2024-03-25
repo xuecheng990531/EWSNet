@@ -79,104 +79,105 @@ def train(model1, model2, refine, criterion1, criterion2, criterion3,
             pbar.set_postfix({'loss': '{0:1.5f}'.format(train_loss)})
             pbar.update(1)
 
+        with torch.no_grad():
         # 在测试集合上进行验证
-        model1.eval()
-        model2.eval()
-        refine.eval()
+        # model1.eval()
+        # model2.eval()
+        # refine.eval()
 
-        test_loss = 0
-        pbar_test = tqdm(test_loader,
-                         colour='#81D551',
-                         desc="testing",
-                         dynamic_ncols=True)
-        for index, (img, thin, thick, mask) in enumerate(pbar_test):
-            inputs, thin_labels, thick_labels, all_label = img.to(
-                device), thin.to(device), thick.to(device), mask.to(device)
+            test_loss = 0
+            pbar_test = tqdm(test_loader,
+                            colour='#81D551',
+                            desc="testing",
+                            dynamic_ncols=True)
+            for index, (img, thin, thick, mask) in enumerate(pbar_test):
+                inputs, thin_labels, thick_labels, all_label = img.to(
+                    device), thin.to(device), thick.to(device), mask.to(device)
 
-            thick_pred_val = model2(inputs)
-            save_image(thick_pred_val,
-                       f'visual_output/thick/thick_val_mask_{index + 1}.png')
-            thick_loss = criterion2(thick_pred_val, thick_labels)
+                thick_pred_val = model2(inputs)
+                save_image(thick_pred_val,
+                        f'visual_output/thick/thick_val_mask_{index + 1}.png')
+                thick_loss = criterion2(thick_pred_val, thick_labels)
 
-            thin_pred_val = model1(torch.cat([inputs, thick_pred_val], dim=1))
-            save_image(thin_pred_val,
-                       f'visual_output/thin/thin_val_mask_{index + 1}.png')
-            thin_loss = criterion1(thin_pred_val, thin_labels)
+                thin_pred_val = model1(torch.cat([inputs, thick_pred_val], dim=1))
+                save_image(thin_pred_val,
+                        f'visual_output/thin/thin_val_mask_{index + 1}.png')
+                thin_loss = criterion1(thin_pred_val, thin_labels)
 
-            second_pred_val = thick_pred_val + thin_pred_val
+                second_pred_val = thick_pred_val + thin_pred_val
 
-            second_pred_val = refine(second_pred_val)
-            save_image(second_pred_val,
-                       f'visual_output/all/all_val_mask_{index + 1}.png')
-            all_loss = criterion3(second_pred_val, all_label)
+                second_pred_val = refine(second_pred_val)
+                save_image(second_pred_val,
+                        f'visual_output/all/all_val_mask_{index + 1}.png')
+                all_loss = criterion3(second_pred_val, all_label)
 
-            second_pred_val_clone = second_pred_val.clone()
-            second_pred_val_clone[second_pred_val_clone > 0.5] = 1
-            second_pred_val_clone[second_pred_val_clone <= 0.5] = 0
+                second_pred_val_clone = second_pred_val.clone()
+                second_pred_val_clone[second_pred_val_clone > 0.5] = 1
+                second_pred_val_clone[second_pred_val_clone <= 0.5] = 0
 
-            total_loss = thin_loss + thick_loss + all_loss
+                total_loss = thin_loss + thick_loss + all_loss
 
-            optimizer1.zero_grad()
-            optimizer2.zero_grad()
-            optimizer3.zero_grad()
+                optimizer1.zero_grad()
+                optimizer2.zero_grad()
+                optimizer3.zero_grad()
 
-            total_loss.backward()
+                # total_loss.backward()
 
-            optimizer1.step()
-            optimizer2.step()
-            optimizer3.step()
+                optimizer1.step()
+                optimizer2.step()
+                optimizer3.step()
 
-            test_loss += total_loss.item() / len(test_loader)
+                test_loss += total_loss.item() / len(test_loader)
 
-            spe = BinarySpecificity().to(device)
-            f1 = BinaryF1Score().to(device)
-            sen = BinaryRecall().to(device)
-            acc = BinaryAccuracy().to(device)
-            auc = BinaryAUROC().to(device)
+                spe = BinarySpecificity().to(device)
+                f1 = BinaryF1Score().to(device)
+                sen = BinaryRecall().to(device)
+                acc = BinaryAccuracy().to(device)
+                auc = BinaryAUROC().to(device)
 
-        test_writer.add_scalar(tag='Acc',
-                               scalar_value=acc(second_pred_val_clone,
+            test_writer.add_scalar(tag='Acc',
+                                scalar_value=acc(second_pred_val_clone,
+                                                    all_label).to(device),
+                                global_step=epoch)
+            test_writer.add_scalar(tag='Sen',
+                                scalar_value=sen(second_pred_val_clone,
+                                                    all_label).to(device),
+                                global_step=epoch)
+            test_writer.add_scalar(tag='Spe',
+                                scalar_value=spe(second_pred_val_clone,
+                                                    all_label).to(device),
+                                global_step=epoch)
+            test_writer.add_scalar(tag='F1',
+                                scalar_value=f1(second_pred_val_clone,
                                                 all_label).to(device),
-                               global_step=epoch)
-        test_writer.add_scalar(tag='Sen',
-                               scalar_value=sen(second_pred_val_clone,
-                                                all_label).to(device),
-                               global_step=epoch)
-        test_writer.add_scalar(tag='Spe',
-                               scalar_value=spe(second_pred_val_clone,
-                                                all_label).to(device),
-                               global_step=epoch)
-        test_writer.add_scalar(tag='F1',
-                               scalar_value=f1(second_pred_val_clone,
-                                               all_label).to(device),
-                               global_step=epoch)
-        test_writer.add_scalar(tag='AUC',
-                               scalar_value=auc(second_pred_val_clone,
-                                                all_label).to(device),
-                               global_step=epoch)
+                                global_step=epoch)
+            test_writer.add_scalar(tag='AUC',
+                                scalar_value=auc(second_pred_val_clone,
+                                                    all_label).to(device),
+                                global_step=epoch)
 
-        if f1(second_pred_val_clone, all_label).to(device) > best_f1:
-            best_f1 = f1(second_pred_val_clone, all_label).to(device)
-        if acc(second_pred_val_clone, all_label).to(device) > best_acc:
-            best_acc = acc(second_pred_val_clone, all_label).to(device)
-        if sen(second_pred_val_clone, all_label).to(device) > best_sen:
-            best_sen = sen(second_pred_val_clone, all_label).to(device)
-        if spe(second_pred_val_clone, all_label).to(device) < best_spe:
-            best_spe = spe(second_pred_val_clone, all_label).to(device)
-        if auc(second_pred_val_clone, all_label).to(device) > best_auc:
-            best_auc = auc(second_pred_val_clone, all_label).to(device)
+            if f1(second_pred_val_clone, all_label).to(device) > best_f1:
+                best_f1 = f1(second_pred_val_clone, all_label).to(device)
+            if acc(second_pred_val_clone, all_label).to(device) > best_acc:
+                best_acc = acc(second_pred_val_clone, all_label).to(device)
+            if sen(second_pred_val_clone, all_label).to(device) > best_sen:
+                best_sen = sen(second_pred_val_clone, all_label).to(device)
+            if spe(second_pred_val_clone, all_label).to(device) < best_spe:
+                best_spe = spe(second_pred_val_clone, all_label).to(device)
+            if auc(second_pred_val_clone, all_label).to(device) > best_auc:
+                best_auc = auc(second_pred_val_clone, all_label).to(device)
 
-        # save_checkpoint(root,
-        #                 model_thin=model1,
-        #                 model_thick=model2,
-        #                 refine_model=refine,
-        #                 better=f1(second_pred_val_clone,
-        #                           all_label).to(device) == best_f1,
-        #                 dataname=dataname)
+            # save_checkpoint(root,
+            #                 model_thin=model1,
+            #                 model_thick=model2,
+            #                 refine_model=refine,
+            #                 better=f1(second_pred_val_clone,
+            #                           all_label).to(device) == best_f1,
+            #                 dataname=dataname)
 
-        print(
-            'All_model:\nBest F1:{}---Best ACC:{}---Best Sen:{}---Best Spe:{}---Best AUC:{}'
-            .format(best_f1, best_acc, best_sen, best_spe, best_auc))
+            print(
+                'All_model:\nBest F1:{}---Best ACC:{}---Best Sen:{}---Best Spe:{}---Best AUC:{}'
+                .format(best_f1, best_acc, best_sen, best_spe, best_auc))
         epoch += 1
 
 
